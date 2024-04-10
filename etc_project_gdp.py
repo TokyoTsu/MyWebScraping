@@ -23,7 +23,7 @@ def extract(url, table_attribs):
    for row in rows:
     col = row.find_all('td')
     if len(col)!=0:
-        data_dict = {"Country": col[0].contents[0],
+        data_dict = {"Country": col[1].contents[0],
                     "GDP_USD_million": col[2].contents[0]}
         df1 = pd.DataFrame(data_dict, index=[0])
         df = pd.concat([df, df1], ignore_index=True)            
