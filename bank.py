@@ -11,7 +11,7 @@ csv_file = '/home/project/exchange_rate.csv'
 csv_load = 'Largest_banks_data.csv'
 table_name = 'Largest_banks'
 db_name = 'Banks.db'
-table_attribs =["Name", "MC_USD_Billion"]
+table_attribs =["Bank name", "MC_USD_Billion"]
 log_file = 'code_log.txt'
 
 def log_progress(message):
@@ -24,37 +24,33 @@ def log_progress(message):
         f.write(timestamp + ':' + message + '\n') 
 
 def extract(url, table_attribs):
-   html_page = requests.get(url).text
-   data = BeautifulSoup(html_page, 'html.parser')
-   df = pd.DataFrame(columns=table_attribs)
-   tables = data.find_all('tbody')
-   rows = tables[0].find_all('tr')
-   for row in rows:
+    html_page = requests.get(url).text
+    data = BeautifulSoup(html_page, 'html.parser')
+    df = pd.DataFrame(columns=table_attribs)
+    tables = data.find_all('tbody')
+    rows = tables[0].find_all('tr')    
+    for row in rows:
      col = row.find_all('td')
-     print(col)
      if len(col)!=0:
-        title = col.find('a')
-        if title is not None and '-' not in title.text:
-          data_dict = {"Bank name": title.text, "MC_USD_Billion": col[2].contents[0]}
-          df1 = pd.DataFrame(data_dict, index=[0])
-          df = pd.concat([df, df1], ignore_index=True)  
-   print(df)          
-   return df
+        bank_name = col[1].find_all('a')[1]['title']
+        data_dict = {"Bank name": bank_name, "MC_USD_Billion": float(col[2].contents[0][:-1])}
+        df1 = pd.DataFrame(data_dict, index=[0])
+        df = pd.concat([df, df1.set_index(df.index)], axis=1)
+    print(df)     
+    return df
 
 def transform(csv_file, df):
     dataframe = pd.read_csv(csv_file)
     dict = dataframe.set_index('Currency').to_dict()['Rate']
     df1 = pd.DataFrame(columns=["MC_GBP_Billion", "MC_EUR_Billion", "MC_INR_Billion"])
     gbp_rate = dict["GBP"]
-    usd = [x.strip() for x in df['MC_USD_Billion']]
-    usd_fl = [float(x) for x in usd]
     eur_rate = dict["EUR"]
     inr_rate = dict["INR"]
-    df1['MC_GBP_Billion'] = [np.round(x* gbp_rate, 2) for x in usd_fl] 
-    df1['MC_EUR_Billion'] = [np.round(x*eur_rate, 2) for x in usd_fl]
-    df1['MC_INR_Billion'] = [np.round(x*inr_rate, 2) for x in usd_fl]
-    df = pd.concat([df, df1])
-    print(df['MC_EUR_Billion'])
+    df1["MC_GBP_Billion"] = [np.round(x*gbp_rate, 2) for x in df["MC_USD_Billion"]] 
+    df1["MC_EUR_Billion"] = [np.round(x*eur_rate, 2) for x in df["MC_USD_Billion"]]
+    df1["MC_INR_Billion"] = [np.round(x*inr_rate, 2) for x in df["MC_USD_Billion"]]
+    df = pd.concat([df, df1],  ignore_index=True)
+    print(df)
     return df
 
 def load_to_csv(df, csv_load):
@@ -86,6 +82,20 @@ log_progress('Data saved to CSV file')
 sql_connection = sqlite3.connect('Banks.db')
 log_progress('SQL Connection initiated.')
 load_to_db(df, sql_connection, table_name)
+log_progress('query statement initialization')
 query_statement = f"SELECT * FROM Largest_banks"
+log_progress('Execute query statement')
 run_query(query_statement, sql_connection)
+log_progress('query statement initialization')
+
 query_statement2 = f"SELECT AVG(MC_GBP_Billion) FROM Largest_banks"
+log_progress('Execute query statement')
+
+run_query(query_statement2, sql_connection)
+log_progress('query statement initialization')
+
+query_statement3 = f"SELECT Name from Largest_banks LIMIT 5"
+log_progress('Execute query statement')
+
+run_query(query_statement3, sql_connection)
+log_progress('End of process')
