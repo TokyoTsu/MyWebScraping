@@ -11,7 +11,7 @@ csv_file = '/home/project/exchange_rate.csv'
 csv_load = 'Largest_banks_data.csv'
 table_name = 'Largest_banks'
 db_name = 'Banks.db'
-table_attribs =["Bank name", "MC_USD_Billion"]
+table_attribs =["Name", "MC_USD_Billion"]
 log_file = 'code_log.txt'
 
 def log_progress(message):
@@ -33,7 +33,7 @@ def extract(url, table_attribs):
      col = row.find_all('td')
      if len(col)!=0:
         bank_name = col[1].find_all('a')[1]['title']
-        data_dict = {"Bank name": bank_name, "MC_USD_Billion": float(col[2].contents[0][:-1])}
+        data_dict = {"Name": bank_name, "MC_USD_Billion": float(col[2].contents[0][:-1])}
         df1 = pd.DataFrame(data_dict, index=[0])
         df = pd.concat([df, df1], ignore_index=True)
     return df
