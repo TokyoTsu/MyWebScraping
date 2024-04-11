@@ -35,8 +35,7 @@ def extract(url, table_attribs):
         bank_name = col[1].find_all('a')[1]['title']
         data_dict = {"Bank name": bank_name, "MC_USD_Billion": float(col[2].contents[0][:-1])}
         df1 = pd.DataFrame(data_dict, index=[0])
-        df = pd.concat([df, df1.set_index(df.index)], axis=1)
-    print(df)     
+        df = pd.concat([df, df1], ignore_index=True)
     return df
 
 def transform(csv_file, df):
@@ -49,7 +48,7 @@ def transform(csv_file, df):
     df1["MC_GBP_Billion"] = [np.round(x*gbp_rate, 2) for x in df["MC_USD_Billion"]] 
     df1["MC_EUR_Billion"] = [np.round(x*eur_rate, 2) for x in df["MC_USD_Billion"]]
     df1["MC_INR_Billion"] = [np.round(x*inr_rate, 2) for x in df["MC_USD_Billion"]]
-    df = pd.concat([df, df1],  ignore_index=True)
+    df = pd.concat([df, df1.set_index(df.index)],  axis=1)
     print(df)
     return df
 
